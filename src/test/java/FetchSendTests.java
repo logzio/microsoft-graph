@@ -12,10 +12,9 @@ import org.json.JSONTokener;
 import org.junit.*;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.integration.ClientAndServer;
-import org.mockserver.model.HttpRequest;
+import org.mockserver.model.RequestDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import javax.naming.AuthenticationException;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -23,7 +22,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static java.lang.Thread.sleep;
 import static org.mockserver.integration.ClientAndServer.startClientAndServer;
@@ -33,11 +33,9 @@ import static org.mockserver.model.HttpResponse.response;
 public class FetchSendTests {
 
     private static final Logger logger = LoggerFactory.getLogger(FetchSendTests.class.getName());
-
     private static MockServerClient mockServerClient = null;
     private static ClientAndServer mockServer;
     private static LogzioJavaSenderParams senderParams = new LogzioJavaSenderParams();
-
     private int retries = 0;
     private static Path tempDir;
 
@@ -90,17 +88,14 @@ public class FetchSendTests {
         } catch (FileNotFoundException e) {
 
         }
-
     }
 
     @AfterClass
     public static void close() {
         mockServer.stop();
     }
-
     private RequestDataResult getSampleResult() {
         File signinsFile = new File(getClass().getClassLoader().getResource("sampleSignins.json").getFile());
-
         try {
             String content = FileUtils.readFileToString(signinsFile, "utf-8");
             JSONTokener tokener = new JSONTokener(content);
@@ -117,53 +112,48 @@ public class FetchSendTests {
         int initialRequestsLength = mockServerClient.retrieveRecordedRequests(request().withMethod("POST")).length;
         ArrayList<JsonArrayRequest> requests = new ArrayList<>();
         requests.add(this::getSampleResult);
-
         FetchSendManager manager = new FetchSendManager(requests, senderParams, 10);
         manager.start();
         manager.pullAndSendData();
         Thread.sleep(2000);
-        HttpRequest[] recordedRequests = mockServerClient.retrieveRecordedRequests(request().withMethod("POST"));
+        RequestDefinition[] recordedRequests = mockServerClient.retrieveRecordedRequests(request().withMethod("POST"));
         Assert.assertEquals(initialRequestsLength + 1, recordedRequests.length);
-        JSONObject jsonObject = new JSONObject(recordedRequests[initialRequestsLength].getBodyAsString());
-        Assert.assertEquals("aaaaa-bbbb-cccc-dddd-123456789", jsonObject.getString("id"));
-        Assert.assertEquals("John Smith", jsonObject.getString("userDisplayName"));
-        Assert.assertEquals("john.s@gmail.com", jsonObject.getString("userPrincipalName"));
+        Map<String,String> paramsMap=mapFromJSONObject(new JSONObject(recordedRequests[initialRequestsLength].toString()).getJSONObject("body"));
+        Assert.assertEquals("aaaaa-bbbb-cccc-dddd-123456789", paramsMap.get("id"));
+        Assert.assertEquals("John Smith", paramsMap.get("userDisplayName"));
+        Assert.assertEquals("john.s@gmail.com", paramsMap.get("userPrincipalName"));
         manager.shutdown();
     }
 
     @Test
     public void awaitAndRetryTest() throws InterruptedException, JSONException {
         int initialRequestsLength = mockServerClient.retrieveRecordedRequests(request().withMethod("POST")).length;
-
         ArrayList<JsonArrayRequest> requests = new ArrayList<>();
         requests.add(this::getResultAfter2Retries);
         FetchSendManager manager = new FetchSendManager(requests, senderParams, 10);
         manager.start();
         manager.pullAndSendData();
         Thread.sleep(2000);
-        HttpRequest[] recordedRequests = mockServerClient.retrieveRecordedRequests(request().withMethod("POST"));
+        RequestDefinition[] recordedRequests = mockServerClient.retrieveRecordedRequests(request().withMethod("POST"));
         Assert.assertEquals(initialRequestsLength + 1, recordedRequests.length);
-        JSONObject jsonObject = new JSONObject(recordedRequests[initialRequestsLength].getBodyAsString());
-        Assert.assertEquals(1, jsonObject.getInt("key"));
+        Map<String,String> paramsMap=mapFromJSONObject(new JSONObject(recordedRequests[initialRequestsLength].toString()).getJSONObject("body"));
+        Assert.assertEquals(1, Integer.parseInt(paramsMap.get("key")));
         manager.shutdown();
-
     }
 
 
     @Test
     public void alwaysFalseRetryTest() throws InterruptedException {
         int initialRequestsLength = mockServerClient.retrieveRecordedRequests(request().withMethod("POST")).length;
-
         ArrayList<JsonArrayRequest> requests = new ArrayList<>();
         requests.add(this::getAlwaysFalseStatus);
         FetchSendManager manager = new FetchSendManager(requests, senderParams, 10);
         manager.start();
         manager.pullAndSendData();
         Thread.sleep(2000);
-        HttpRequest[] recordedRequests = mockServerClient.retrieveRecordedRequests(request().withMethod("POST"));
+        RequestDefinition[] recordedRequests = mockServerClient.retrieveRecordedRequests(request().withMethod("POST"));
         Assert.assertEquals(initialRequestsLength, recordedRequests.length);
         manager.shutdown();
-
     }
 
     private RequestDataResult getResultAfter2Retries() {
@@ -173,6 +163,7 @@ public class FetchSendTests {
             result.setSucceed(false);
             return result;
         }
+
         try {
             JSONArray dataResult = new JSONArray("[{\"key\":1}]");
             return  new RequestDataResult(dataResult);
@@ -204,20 +195,31 @@ public class FetchSendTests {
         for (int i = 0; i < 100; i++) {
             requests.add(this::getSampleResult);
         }
+
         FetchSendManager manager = new FetchSendManager(requests, senderParams, 10);
         manager.start();
-
         Thread storageThread = new Thread(manager::pullAndSendData);
         storageThread.start();
         try {
             sleep(1000);
             storageThread.interrupt();
             sleep(3000);
-            HttpRequest[] recordedRequests = mockServerClient.retrieveRecordedRequests(request().withMethod("POST"));
+            RequestDefinition[] recordedRequests = mockServerClient.retrieveRecordedRequests(request().withMethod("POST"));
             Assert.assertEquals(initialRequestsCount + 100, recordedRequests.length);
         } catch (InterruptedException e) {
             Assert.fail(e.getMessage());
         }
     }
 
+    private Map<String,String> mapFromJSONObject(JSONObject json){
+        String[] paramString= json.getString("string").replaceAll("[{}\\\u0000\"]","")
+                .split("\\r?\\n")[0].split(",");
+        Map<String,String> paramsMap= new HashMap<>();
+        for(String string: paramString){
+            String[] params=string.split(":",2);
+            paramsMap.put(params[0],params[1]);
+        }
+
+        return paramsMap;
+    }
 }

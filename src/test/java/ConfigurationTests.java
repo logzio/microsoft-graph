@@ -3,7 +3,6 @@ import objects.MSGraphConfiguration;
 import org.junit.Assert;
 import org.junit.Test;
 import org.yaml.snakeyaml.error.YAMLException;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 
