@@ -75,6 +75,11 @@ azureADClient:
   clientId: "<<APP_CLIENT_ID>>"
   clientSecret: "<<APP_CLIENT_SECRET>>"
 
+targetApis:
+  ADApis:
+    - <<supportedApi1>>
+    - <<supportedApi2>>
+
 logLevel: INFO
 ```
 
@@ -90,6 +95,7 @@ logLevel: INFO
 | azureADClient.clientId | **Required**. Application client ID. <br> You can find this in the _Overview_ section of the app you registered in step 1. |
 | azureADClient.clientSecret | **Required**. The Application Client Secret you created in step 2. |
 | azureADClient.pullIntervalSeconds | **Default**: `300` <br>  Time interval, in seconds, to pull the logs with the Graph API. |
+| targetApis.ADApis | **Default**: `300` <br>  List of AD apis to run. Required at least 1 api to run. Current supported apis: directoryAudits, signIns, riskySignIns. All apis are case sensitive and should be configured as mentioned here.|
 | logLevel | **Default**: `INFO` <br> Log level for Logizo-MSGraph to omit. Can be one of: `OFF`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `TRACE`, `ALL`. |
 
 #### <span id="if-fromdisk-true">If fromDisk=true</span>

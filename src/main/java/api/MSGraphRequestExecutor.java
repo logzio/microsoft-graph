@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 public class MSGraphRequestExecutor {
     private static final Logger logger = Logger.getLogger(MSGraphRequestExecutor.class);
-    public static final String API_ULR = "https://graph.microsoft.com/v1.0/";
+
     private static final String AUTHORIZATION = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String CONTENT_TYPE = "Content-Type";
@@ -34,7 +34,6 @@ public class MSGraphRequestExecutor {
     private static final String JSON_ERROR = "error";
     private static final String JSON_MESSAGE = "message";
     private static final int DEFAULT_READ_TIMEOUT_SEC = 20;
-
     private final Authornicator auth;
     private final int interval; // in millis
 
@@ -65,12 +64,13 @@ public class MSGraphRequestExecutor {
         return client.newCall(request).execute();
     }
 
-    public JSONArray getAllPages(String api, String timeField) throws IOException, JSONException, AuthenticationException {
-        return getAllPages(API_ULR + api + timeFilterSuffix(timeField));
+    public JSONArray getAllPages(String api, String timeField,String optionalFilter) throws IOException, JSONException, AuthenticationException {
+        return getAllPages(  api + timeFilterSuffix(timeField)+optionalFilter);
     }
 
     public JSONArray getAllPages(String url) throws IOException, JSONException, AuthenticationException {
         logger.debug("API URL: " + url);
+        logger.info("Requesting url: "+url);
         Response response = executeRequest(url);
         String responseBody = response.body().string();
         JSONObject resultJson = new JSONObject(responseBody);
@@ -100,5 +100,4 @@ public class MSGraphRequestExecutor {
         fromDate.setTime(fromDate.getTime() - interval);
         return FILTER_PREFIX + timeField + GREATER_OR_EQUEAL + df.format(fromDate);
     }
-
 }

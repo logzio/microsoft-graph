@@ -42,6 +42,8 @@ public class ConfigurationTests {
         Assert.assertEquals(10000, configuration.getSenderParams().getLogsCountLimit());
         Assert.assertEquals("DEBUG", configuration.getLogLevel());
         Assert.assertFalse(configuration.getSenderParams().isFromDisk());
+        Assert.assertNotNull(configuration.getTargetApi().getADApis());
+        Assert.assertEquals(3, configuration.getTargetApi().getADApis().size());
     }
 
     @Test
@@ -54,19 +56,17 @@ public class ConfigurationTests {
     @Test
     public void wrongParameterConfigTest() {
         org.testng.Assert.assertThrows(YAMLException.class, () -> {
-                String testFileString = new File(getClass().getClassLoader().getResource("wrongParameterNameConfig.yaml").getFile()).getAbsolutePath();
-                new MSClient(testFileString).getConfiguration();
+            String testFileString = new File(getClass().getClassLoader().getResource("wrongParameterNameConfig.yaml").getFile()).getAbsolutePath();
+            MSGraphConfiguration client=new MSClient(testFileString).getConfiguration();
+            Assert.assertNull(client.getTargetApi().getADApis());
         });
     }
 
     @Test
     public void missingParameterConfigTest() {
         org.testng.Assert.assertThrows(NullPointerException.class, () -> {
-                String testFileString = new File(getClass().getClassLoader().getResource("missingParameterConfig.yaml").getFile()).getAbsolutePath();
-                new MSClient(testFileString).getConfiguration();
+            String testFileString = new File(getClass().getClassLoader().getResource("missingParameterConfig.yaml").getFile()).getAbsolutePath();
+            new MSClient(testFileString).getConfiguration();
         });
     }
-
-
-
 }
