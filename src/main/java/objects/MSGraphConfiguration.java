@@ -6,7 +6,6 @@ public class MSGraphConfiguration {
     private String logLevel = "INFO";
     private TargetApi targetApi;
 
-
     public MSGraphConfiguration() {
     }
 

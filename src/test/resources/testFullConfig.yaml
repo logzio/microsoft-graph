@@ -18,3 +18,5 @@ targetApi:
     - signIns
     - directoryAudits
     - riskySignIns
+  ASCApis:
+    - alerts
