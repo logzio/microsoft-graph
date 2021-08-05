@@ -3,8 +3,9 @@ package objects;
 public class MSGraphConfiguration {
     private AzureADClient azureADClient;
     private LogzioJavaSenderParams senderParams;
-    private String logLevel = "DEBUG";
+    private String logLevel = "INFO";
     private TargetApi targetApi;
+
 
     public MSGraphConfiguration() {
     }

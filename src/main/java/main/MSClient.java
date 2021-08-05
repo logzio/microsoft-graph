@@ -49,8 +49,7 @@ public class MSClient {
             return;
         }
         Office365Apis officeApis = new Office365Apis(executor);
-        ArrayList<JsonArrayRequest> requests = null;
-        requests = new ArrayList(getApiTargets(officeApis));
+        ArrayList<JsonArrayRequest>  requests = new ArrayList(getApiTargets(officeApis));
         FetchSendManager manager = new FetchSendManager(requests, configuration.getSenderParams(), configuration.getAzureADClient().getPullIntervalSeconds());
         manager.start();
     }
@@ -63,7 +62,6 @@ public class MSClient {
     private List<JsonArrayRequest> getApiTargets(Office365Apis office365Apis) throws ConfigurationException {
         List<String> adApis = configuration.getTargetApi().getADApis();
         List<String> apiMethods = new java.util.LinkedList<>();
-
         if (adApis != null) {
             apiMethods.addAll(adApis.stream().map(api -> "get" + StringUtils.capitalize(api)).collect(Collectors.toList()));
         }
@@ -77,6 +75,7 @@ public class MSClient {
         if(apis.size()!=apiMethods.size()){
             throw new ConfigurationException("Invalid configuration of apis in configuration yaml, review the configured apis: "+adApis);
         }
+
         return apis;
     }
 

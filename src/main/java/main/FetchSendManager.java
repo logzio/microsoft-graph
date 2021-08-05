@@ -52,7 +52,7 @@ public class FetchSendManager implements Shutdownable {
     public void start() {
         logger.info("starting fetch-send scheduled operation");
         enableHangupSupport();
-        dataRequests.stream().forEach(request -> taskScheduler.scheduleAtFixedRate(() -> {
+        dataRequests.forEach(request -> taskScheduler.scheduleAtFixedRate(() -> {
             try {
                 pullAndSendData(request);
             } catch (ConfigurationException exception) {
@@ -63,7 +63,6 @@ public class FetchSendManager implements Shutdownable {
     }
 
     public void pullAndSendData(JsonArrayRequest request) throws ConfigurationException {
-        //    for (JsonArrayRequest request : dataRequests) {
         RequestDataResult dataResult = request.getResult();
         if (!dataResult.isSucceed()) {
             try {
@@ -81,15 +80,21 @@ public class FetchSendManager implements Shutdownable {
                 logger.error("All retries failed, ignoring request");
             }
         }
+
+        convertAndSendResults(dataResult);
+    }
+
+    private void convertAndSendResults(RequestDataResult dataResult) {
         for (int i = 0; i < dataResult.getData().length(); i++) {
             try {
                 byte[] jsonAsBytes = StandardCharsets.UTF_8.encode(dataResult.getData().getJSONObject(i).toString()).array();
-                sender.send(jsonAsBytes);
+                synchronized (this) {
+                    sender.send(jsonAsBytes);
+                }
             } catch (JSONException e) {
                 logger.error("error extracting json object from response: " + e.getMessage(), e);
             }
         }
-        //  }
     }
 
     private LogzioSender getLogzioSender() {
