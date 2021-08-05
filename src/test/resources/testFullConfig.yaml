@@ -12,3 +12,9 @@ senderParams:
   logsCountLimit: 10000
 
 logLevel: "DEBUG"
+
+targetApi:
+  ADApis:
+    - signIns
+    - directoryAudits
+    - riskySignIns

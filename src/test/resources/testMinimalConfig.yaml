@@ -5,3 +5,7 @@ azureADClient:
 
 senderParams:
   accountToken: "sampleAccountToken"
+
+targetApi:
+  ADApis:
+    - signIns

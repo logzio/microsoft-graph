@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.json.JSONException;
+import utils.exceptions.ConfigurationException;
 import utils.HangupInterceptor;
 import utils.Shutdownable;
 import utils.StatusReporterFactory;
@@ -41,7 +42,7 @@ public class FetchSendManager implements Shutdownable {
 
 
     public FetchSendManager(ArrayList<JsonArrayRequest> dataRequests, LogzioJavaSenderParams senderParams, int interval) {
-        this.taskScheduler = Executors.newSingleThreadScheduledExecutor();
+        this.taskScheduler = Executors.newScheduledThreadPool(dataRequests.size());
         this.logzioSenderParams = senderParams;
         this.dataRequests = dataRequests;
         this.sender = getLogzioSender();
@@ -51,37 +52,47 @@ public class FetchSendManager implements Shutdownable {
     public void start() {
         logger.info("starting fetch-send scheduled operation");
         enableHangupSupport();
-        taskScheduler.scheduleAtFixedRate(this::pullAndSendData, NO_DELAY, interval, SECONDS);
+        dataRequests.forEach(request -> taskScheduler.scheduleAtFixedRate(() -> {
+            try {
+                pullAndSendData(request);
+            } catch (ConfigurationException exception) {
+                exception.printStackTrace();
+            }
+        }, NO_DELAY, interval, SECONDS));
         sender.start();
     }
 
-    public void pullAndSendData() {
-        for (JsonArrayRequest request : dataRequests) {
-            RequestDataResult dataResult = request.getResult();
-            if (!dataResult.isSucceed()) {
-                try {
-                    Awaitility.with()
-                            .pollDelay(DEFAULT_POLLING_INTERVAL, SECONDS)
-                            .pollInterval(fibonacci(FIBONACCI_OFFSET,TimeUnit.SECONDS))
-                            .atMost(RETRY_TIMEOUT_DURATION_SEC, SECONDS)
-                            .await()
-                            .until(() -> {
-                                logger.warn("Couldn't complete the request, retrying..");
-                                dataResult.setRequestDataResult(request.getResult());
-                                return dataResult.isSucceed();
-                            });
-                } catch (ConditionTimeoutException e) {
-                    logger.error("All retries failed, ignoring request");
-                    continue;
-                }
+    public void pullAndSendData(JsonArrayRequest request) throws ConfigurationException {
+        RequestDataResult dataResult = request.getResult();
+        if (!dataResult.isSucceed()) {
+            try {
+                Awaitility.with()
+                        .pollDelay(DEFAULT_POLLING_INTERVAL, SECONDS)
+                        .pollInterval(fibonacci(FIBONACCI_OFFSET,TimeUnit.SECONDS))
+                        .atMost(RETRY_TIMEOUT_DURATION_SEC, SECONDS)
+                        .await()
+                        .until(() -> {
+                            logger.warn("Couldn't complete the request, retrying..");
+                            dataResult.setRequestDataResult(request.getResult());
+                            return dataResult.isSucceed();
+                        });
+            } catch (ConditionTimeoutException e) {
+                logger.error("All retries failed, ignoring request");
             }
-            for (int i = 0; i < dataResult.getData().length(); i++) {
-                try {
-                    byte[] jsonAsBytes = StandardCharsets.UTF_8.encode(dataResult.getData().getJSONObject(i).toString()).array();
+        }
+
+        convertAndSendResults(dataResult);
+    }
+
+    private void convertAndSendResults(RequestDataResult dataResult) {
+        for (int i = 0; i < dataResult.getData().length(); i++) {
+            try {
+                byte[] jsonAsBytes = StandardCharsets.UTF_8.encode(dataResult.getData().getJSONObject(i).toString()).array();
+                synchronized (this) {
                     sender.send(jsonAsBytes);
-                } catch (JSONException e) {
-                    logger.error("error extracting json object from response: " + e.getMessage(), e);
                 }
+            } catch (JSONException e) {
+                logger.error("error extracting json object from response: " + e.getMessage(), e);
             }
         }
     }
@@ -128,7 +139,7 @@ public class FetchSendManager implements Shutdownable {
     }
 
     private void setFromDiskParams(LogzioSender.Builder senderBuilder) {
-          senderBuilder.withDiskQueue()
+        senderBuilder.withDiskQueue()
                 .setQueueDir(logzioSenderParams.getQueueDir())
                 .setCheckDiskSpaceInterval(logzioSenderParams.getDiskSpaceCheckInterval())
                 .setFsPercentThreshold(logzioSenderParams.getFileSystemFullPercentThreshold())
