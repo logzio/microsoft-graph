@@ -51,6 +51,7 @@ public class FetchSendManager implements Shutdownable {
         this.dataRequests = dataRequests;
         this.sender = getLogzioSender();
         this.interval = interval;
+        this.additionalFields= new HashMap<>();
     }
 
     public FetchSendManager(ArrayList<JsonArrayRequest> requests, MSGraphConfiguration config) {
