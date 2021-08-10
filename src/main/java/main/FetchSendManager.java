@@ -6,11 +6,13 @@ import io.logz.sender.SenderStatusReporter;
 import io.logz.sender.exceptions.LogzioParameterErrorException;
 import objects.JsonArrayRequest;
 import objects.LogzioJavaSenderParams;
+import objects.MSGraphConfiguration;
 import objects.RequestDataResult;
 import org.apache.log4j.Logger;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.json.JSONException;
+import org.json.JSONObject;
 import utils.exceptions.ConfigurationException;
 import utils.HangupInterceptor;
 import utils.Shutdownable;
@@ -18,6 +20,8 @@ import utils.StatusReporterFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -32,13 +36,13 @@ public class FetchSendManager implements Shutdownable {
     private static final int RETRY_TIMEOUT_DURATION_SEC = 60;
     private static final int TERMINATION_TIMEOUT_SEC = 20;
     private static final int FIBONACCI_OFFSET = 4;
-
     private final ScheduledExecutorService taskScheduler;
     private final ArrayList<JsonArrayRequest> dataRequests;
     private final LogzioJavaSenderParams logzioSenderParams;
     private final LogzioSender sender;
     private final int interval;
     private ScheduledExecutorService senderExecutors;
+    private Map<String,String> additionalFields;
 
 
     public FetchSendManager(ArrayList<JsonArrayRequest> dataRequests, LogzioJavaSenderParams senderParams, int interval) {
@@ -47,6 +51,23 @@ public class FetchSendManager implements Shutdownable {
         this.dataRequests = dataRequests;
         this.sender = getLogzioSender();
         this.interval = interval;
+    }
+
+    public FetchSendManager(ArrayList<JsonArrayRequest> requests, MSGraphConfiguration config) {
+        this(requests,config.getSenderParams(),config.getAzureADClient().getPullIntervalSeconds());
+        additionalFields =initAdditionalFieldsMap(config);
+
+    }
+
+    private Map<String, String> initAdditionalFieldsMap(MSGraphConfiguration config) {
+        Map<String,String> additionalFields=new HashMap<>();
+        additionalFields.put("tenantId",config.getAzureADClient().getTenantId());
+        additionalFields.put("clientId",config.getAzureADClient().getClientId());
+        if(config.getAdditionalFields()!=null){
+            config.getAdditionalFields().forEach(additionalFields::put);
+        }
+
+        return additionalFields;
     }
 
     public void start() {
@@ -85,8 +106,12 @@ public class FetchSendManager implements Shutdownable {
     }
 
     private void convertAndSendResults(RequestDataResult dataResult) {
+        JSONObject data;
         for (int i = 0; i < dataResult.getData().length(); i++) {
             try {
+                data=dataResult.getData().getJSONObject(i);
+                JSONObject finalData = data;
+                additionalFields.forEach(finalData::put);
                 byte[] jsonAsBytes = StandardCharsets.UTF_8.encode(dataResult.getData().getJSONObject(i).toString()).array();
                 synchronized (this) {
                     sender.send(jsonAsBytes);

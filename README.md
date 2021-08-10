@@ -87,6 +87,9 @@ targetApis:
     - <<supportedApi1>>
 
 logLevel: INFO
+
+additionalFields:
+  <<KEY>>: "<<VALUE>>"
 ```
 
 **Parameters**
@@ -105,6 +108,7 @@ logLevel: INFO
 | targetApis.ADApis | **Optional**. <br>  List of AD apis to run. Current supported apis: directoryAudits, signIns (this includes risky sign ins), riskySignIns. All apis are case sensitive and should be configured as mentioned here. |
 | targetApis.ASCApis | **Optional**. <br>  List of ASC apis to run. Current supported apis: alerts. All apis are case sensitive and should be configured as mentioned here. |
 | logLevel | **Default**: `INFO` <br> Log level for Logizo-MSGraph to omit. Can be one of: `OFF`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `TRACE`, `ALL`. |
+| additionalFields | **Optional**. <br> List of additional fields to be added to the sent data. Pairs of key and value.
 
 #### <span id="if-fromdisk-true">If fromDisk=true</span>
 

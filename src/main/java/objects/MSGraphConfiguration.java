@@ -1,10 +1,13 @@
 package objects;
 
+import java.util.HashMap;
+
 public class MSGraphConfiguration {
     private AzureADClient azureADClient;
     private LogzioJavaSenderParams senderParams;
     private String logLevel = "INFO";
     private TargetApi targetApi;
+    private HashMap<String,String> additionalFields;
 
     public MSGraphConfiguration() {
     }
@@ -39,5 +42,13 @@ public class MSGraphConfiguration {
 
     public void setTargetApi(TargetApi targetApi) {
         this.targetApi = targetApi;
+    }
+
+    public HashMap<String, String> getAdditionalFields() {
+        return additionalFields;
+    }
+
+    public void setAdditionalFields(HashMap<String, String> additionalFields) {
+        this.additionalFields = additionalFields;
     }
 }

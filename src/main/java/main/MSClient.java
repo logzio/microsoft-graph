@@ -52,7 +52,7 @@ public class MSClient {
 
         Office365Apis officeApis = new Office365Apis(executor);
         ArrayList<JsonArrayRequest> requests = new ArrayList(getApiTargets(officeApis));
-        FetchSendManager manager = new FetchSendManager(requests, configuration.getSenderParams(), configuration.getAzureADClient().getPullIntervalSeconds());
+        FetchSendManager manager = new FetchSendManager(requests,configuration);
         manager.start();
     }
 
