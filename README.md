@@ -1,12 +1,19 @@
 # Microsoft Graph API Integration
+**Version 0.0.7**  [Change log](CHANGELOG.md)
 
 You can ship logs available from the Microsoft Graph APIs with Logzio-MSGraph.
 Logzio-MSGraph is a self-hosted application.
 
-Logzio-MSGraph supports these APIs:
+**Logzio-MSGraph supports these APIs:**
 
-* Azure Active Directory audit logs
-* Azure Active Directory sign-in logs
+**Azure Active Directory:**
+
+- Audit logs
+
+- Sign-in logs (Including risky sign-in)
+
+**ASC (Azure Security Center):**
+- Alerts
 
 There are many other APIs available through Microsoft Graph.
 If you don't see your API in the list,
@@ -46,10 +53,14 @@ and click **Add a permission**.
 
 Select **Microsoft Graph > Application permissions**.
 
-Select these items:
+Select the following items, for each desired API:
 
+Sign Ins (Including risky sign ins) and Directory Audits:
 * **AuditLog.Read.All**
 * **Directory.Read.All**
+
+ASC(Azure Security Center) Alerts:
+* **SecurityEvents.Read.All**
 
 Click **Add permissions**.
 
@@ -79,8 +90,13 @@ targetApis:
   ADApis:
     - <<supportedApi1>>
     - <<supportedApi2>>
+  ASCApis:
+    - <<supportedApi1>>
 
 logLevel: INFO
+
+additionalFields:
+  <<KEY>>: "<<VALUE>>"
 ```
 
 **Parameters**
@@ -95,8 +111,11 @@ logLevel: INFO
 | azureADClient.clientId | **Required**. Application client ID. <br> You can find this in the _Overview_ section of the app you registered in step 1. |
 | azureADClient.clientSecret | **Required**. The Application Client Secret you created in step 2. |
 | azureADClient.pullIntervalSeconds | **Default**: `300` <br>  Time interval, in seconds, to pull the logs with the Graph API. |
-| targetApis.ADApis | **Default**: `300` <br>  List of AD apis to run. Required at least 1 api to run. Current supported apis: directoryAudits, signIns, riskySignIns. All apis are case sensitive and should be configured as mentioned here.|
+| targetApis | **Required**. <br> Specifies types of api lists to run, each API provider has its own list. Must contain at least 1 list with 1 api in the list. Current supported providers: ADApis, ASCApis. |
+| targetApis.ADApis | **Optional**. <br>  List of AD apis to run. Current supported apis: directoryAudits, signIns (this includes risky sign ins), riskySignIns. All apis are case sensitive and should be configured as mentioned here. |
+| targetApis.ASCApis | **Optional**. <br>  List of ASC apis to run. Current supported apis: alerts. All apis are case sensitive and should be configured as mentioned here. |
 | logLevel | **Default**: `INFO` <br> Log level for Logizo-MSGraph to omit. Can be one of: `OFF`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `TRACE`, `ALL`. |
+| additionalFields | **Optional**. <br> List of additional fields to be added to the sent data. Pairs of key and value.
 
 #### <span id="if-fromdisk-true">If fromDisk=true</span>
 

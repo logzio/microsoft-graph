@@ -16,6 +16,7 @@ public class Office365Apis {
     private static final String AD_DIRECTORY_AUDITS = "auditLogs/directoryaudits";
     private static final String ACTIVITY_DATE_TIME_FIELD = "activityDateTime";
     private static final String GRAPH_API_URL = "https://graph.microsoft.com/v1.0/";
+    private static final String ASC_ALERTS="security/alerts";
     private static final String AD_RISKY_SIGN_INS_FILTER_SUFFIX=" and (riskState eq 'atRisk' or riskState eq 'confirmedCompromised' or riskState eq 'unknownFutureValue')";
     private final MSGraphRequestExecutor requestExecutor;
 
@@ -55,5 +56,9 @@ public class Office365Apis {
 
     public RequestDataResult getRiskySignIns(){
         return office365request(GRAPH_API_URL+AD_SINGINS,CREATED_DATE_TIME_FIELD,AD_RISKY_SIGN_INS_FILTER_SUFFIX);
+    }
+
+    public RequestDataResult getASCAlerts(){
+        return  office365request(GRAPH_API_URL+ASC_ALERTS,CREATED_DATE_TIME_FIELD);
     }
 }

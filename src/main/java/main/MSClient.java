@@ -5,6 +5,7 @@ import api.Office365Apis;
 import objects.JsonArrayRequest;
 import objects.MSGraphConfiguration;
 import objects.RequestDataResult;
+import objects.TargetApi;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -48,22 +49,27 @@ public class MSClient {
             logger.error(e.getMessage(), e);
             return;
         }
+
         Office365Apis officeApis = new Office365Apis(executor);
-        ArrayList<JsonArrayRequest>  requests = new ArrayList(getApiTargets(officeApis));
-        FetchSendManager manager = new FetchSendManager(requests, configuration.getSenderParams(), configuration.getAzureADClient().getPullIntervalSeconds());
+        ArrayList<JsonArrayRequest> requests = new ArrayList(getApiTargets(officeApis));
+        FetchSendManager manager = new FetchSendManager(requests,configuration);
         manager.start();
     }
 
     /**
-     *
      * @param office365Apis
      * @return Method reference list matching yaml api configuration
      */
     private List<JsonArrayRequest> getApiTargets(Office365Apis office365Apis) throws ConfigurationException {
         List<String> adApis = configuration.getTargetApi().getADApis();
+        List<String> ascApis = configuration.getTargetApi().getAscApis();
         List<String> apiMethods = new java.util.LinkedList<>();
         if (adApis != null) {
             apiMethods.addAll(adApis.stream().map(api -> "get" + StringUtils.capitalize(api)).collect(Collectors.toList()));
+        }
+
+        if (ascApis != null) {
+            apiMethods.addAll(ascApis.stream().map(api -> "getASC" + StringUtils.capitalize(api)).collect(Collectors.toList()));
         }
 
         List<JsonArrayRequest> apis = new ArrayList<>();
@@ -72,21 +78,21 @@ public class MSClient {
             logger.info("Initialized api: " + api);
         }
 
-        if(apis.size()!=apiMethods.size()){
-            throw new ConfigurationException("Invalid configuration of apis in configuration yaml, review the configured apis: "+adApis);
+        if (apis.size() != apiMethods.size()) {
+            throw new ConfigurationException("Invalid configuration of apis in configuration yaml, review the configured apis: " + adApis);
         }
 
         return apis;
     }
 
-    private Callable<RequestDataResult> getApiMethodRef(Office365Apis office365Apis, String api) throws ConfigurationException {
-        RequestDataResult res = null;
+    private RequestDataResult getApiMethodRef(Office365Apis office365Apis, String api) throws ConfigurationException {
+        RequestDataResult res;
         try {
             res = (RequestDataResult) office365Apis.getClass().getMethod(api).invoke(office365Apis);
         } catch (ReflectiveOperationException illegalAccessException) {
             throw new ConfigurationException("Invalid configuration of apis in configuration yaml");
         }
-        return (Callable<RequestDataResult>) res;
+        return res;
     }
 
     public MSGraphConfiguration getConfiguration() {
@@ -105,6 +111,16 @@ public class MSClient {
         checkNotNull(config.getAzureADClient().getClientId(), "Parameter azureADClient.clientId is mandatory");
         checkNotNull(config.getAzureADClient().getClientSecret(), "Parameter azureADClient.clientSecret is mandatory");
         checkNotNull(config.getTargetApi(), "Parameter targetApi is mandatory");
+        checkNotNull(checkApiCount(config), "At least one api must be specified in configuration file");
         return config;
+    }
+
+    private Boolean checkApiCount(MSGraphConfiguration config) {
+        List<String> ascApis = config.getTargetApi().getAscApis();
+        List<String> adApis = config.getTargetApi().getADApis();
+        int apiCount = 0;
+        apiCount+=ascApis!=null?ascApis.size():0;
+        apiCount+=adApis!=null?adApis.size():0;
+        return apiCount > 0 ? Boolean.TRUE : null;
     }
 }

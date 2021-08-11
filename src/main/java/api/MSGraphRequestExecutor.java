@@ -69,7 +69,7 @@ public class MSGraphRequestExecutor {
     }
 
     public JSONArray getAllPages(String url) throws IOException, JSONException, AuthenticationException {
-        logger.debug("API URL: " + url);
+        logger.debug("Thread: "+Thread.currentThread().getName()+", API URL: " + url);
         Response response = executeRequest(url);
         String responseBody = response.body().string();
         JSONObject resultJson = new JSONObject(responseBody);
