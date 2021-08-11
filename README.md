@@ -1,12 +1,19 @@
 # Microsoft Graph API Integration
+**Version 0.0.7**  [Change log](CHANGELOG.md)
 
 You can ship logs available from the Microsoft Graph APIs with Logzio-MSGraph.
 Logzio-MSGraph is a self-hosted application.
 
-Logzio-MSGraph supports these APIs:
+**Logzio-MSGraph supports these APIs:**
 
-* Azure Active Directory audit logs
-* Azure Active Directory sign-in logs
+**Azure Active Directory:**
+
+- Audit logs
+
+- Sign-in logs (Including risky sign-in)
+
+**ASC (Azure Security Center):**
+- Alerts
 
 There are many other APIs available through Microsoft Graph.
 If you don't see your API in the list,
@@ -52,7 +59,7 @@ Sign Ins (Including risky sign ins) and Directory Audits:
 * **AuditLog.Read.All**
 * **Directory.Read.All**
 
-ASC Alerts:
+ASC(Azure Security Center) Alerts:
 * **SecurityEvents.Read.All**
 
 Click **Add permissions**.
