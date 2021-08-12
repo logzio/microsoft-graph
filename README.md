@@ -1,5 +1,5 @@
 # Microsoft Graph API Integration
-**Version 0.0.7**  [Change log](CHANGELOG.md)
+**Version 0.0.6**  [Change log](CHANGELOG.md)
 
 You can ship logs available from the Microsoft Graph APIs with Logzio-MSGraph.
 Logzio-MSGraph is a self-hosted application.
