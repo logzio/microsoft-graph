@@ -1,5 +1,5 @@
 
-FROM openjdk:11-jre-alpine
+FROM openjdk:8-jre-alpine
 
 MAINTAINER Tamir Michaeli <tamir.michaeli@logz.io>
 
