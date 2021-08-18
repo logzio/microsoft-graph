@@ -1,5 +1,17 @@
 # Change log
 
+## v0.0.7- Aug. 18, 2021
+
+**Added:**
+- ASC (Azure Security Center) Tasks api.
+- Support for authentication with Azure Management API.
+
+**Changed:**
+- API's architecture to enable extensibility and authentication with different authorizations.
+
+**Updated:**
+- Dockerfile base image
+
 ## v0.0.6- Aug. 11, 2021
 
 **Added:**

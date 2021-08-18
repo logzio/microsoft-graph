@@ -1,4 +1,6 @@
-import api.AuthorizationManager;
+import api.authorization.Authorizer;
+import api.authorization.AzureADAuthorizationManager;
+import api.authorization.AzureManagementAuthorizationManager;
 import objects.AzureADClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -25,22 +27,42 @@ public class ApiTests {
     @Test
     public void accessTokenRequestTest() throws InterruptedException, UnsupportedEncodingException {
         AzureADClient client = getSampleAzureADClient();
+        AzureAuthorizationTest(client);
+    }
+
+    private void AzureAuthorizationTest(AzureADClient client) throws InterruptedException, UnsupportedEncodingException {
         mockWebServer.enqueue(new MockResponse());
         Assert.assertThrows(AuthenticationException.class, () -> {
-            AuthorizationManager manager = new AuthorizationManager(client,"http://localhost:" + mockWebServer.getPort());
+            Authorizer manager = new AzureADAuthorizationManager(client,"http://localhost:" + mockWebServer.getPort());
         });
-        RecordedRequest request = mockWebServer.takeRequest();
-        String body = request.getBody().readUtf8();
+
+        verifyRequest(client);
+        mockWebServer.enqueue(new MockResponse());
+        Assert.assertThrows(AuthenticationException.class, () -> {
+            Authorizer manager = new AzureManagementAuthorizationManager(client,"http://localhost:" + mockWebServer.getPort());
+        });
+
+        verifyRequest(client);
+    }
+
+    private void verifyRequest(AzureADClient client) throws InterruptedException, UnsupportedEncodingException {
+        String body;
+        RecordedRequest request;
+        request = mockWebServer.takeRequest();
+        body = request.getBody().readUtf8();
         Assert.assertTrue(body.contains("client_id=" + client.getClientId()));
         Assert.assertTrue(body.contains("client_secret=" + URLEncoder.encode(client.getClientSecret(), StandardCharsets.UTF_8.toString())));
     }
 
+
     public static AzureADClient getSampleAzureADClient() {
         String clientID = "1234-5678";
         String clientSecret = "shh don't tell";
+        String subscriptionId= "1234id";
         AzureADClient client = new AzureADClient();
         client.setClientId(clientID);
         client.setClientSecret(clientSecret);
+        client.setSubscriptionId(subscriptionId);
         return client;
     }
 }

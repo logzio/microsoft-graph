@@ -1,8 +1,22 @@
+senderParams:
+  accountToken: "<<SHIPPING-TOKEN>>"
+  listenerUrl: "<<LISTENER-HOST>>"
+
 azureADClient:
   pullIntervalSeconds: 300
   tenantId: "<<AD_TENANT_ID>>"
   clientId: "<<APP_CLIENT_ID>>"
   clientSecret: "<<APP_CLIENT_SECRET>>"
 
-senderParams:
-  accountToken: "<<ACCOUNT_TOKEN>>"
+targetApis:
+  ADApis:
+    - <<supportedApi1>>
+    - <<supportedApi2>>
+  ASCApis:
+    - <<supportedApi1>>
+    - <<supportedApi2>>
+
+logLevel: INFO
+
+additionalFields:
+  <<KEY1>>: "<<VALUE>>"

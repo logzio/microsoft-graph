@@ -5,6 +5,7 @@ public class AzureADClient {
     private String tenantId;
     private String clientId;
     private String clientSecret;
+    private String subscriptionId;
     private int pullIntervalSeconds = 300;
 
     public AzureADClient() {
@@ -42,4 +43,11 @@ public class AzureADClient {
         return pullIntervalSeconds;
     }
 
+    public String getSubscriptionId() {
+        return subscriptionId;
+    }
+
+    public void setSubscriptionId(String subscriptionId) {
+        this.subscriptionId = subscriptionId;
+    }
 }

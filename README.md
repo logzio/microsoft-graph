@@ -15,6 +15,8 @@ Logzio-MSGraph is a self-hosted application.
 **ASC (Azure Security Center):**
 - Alerts
 
+- Tasks (Recommendations)
+
 There are many other APIs available through Microsoft Graph.
 If you don't see your API in the list,
 please [open an issue](https://github.com/logzio/microsoft-graph/issues/new) at GitHub to request it.
@@ -69,6 +71,25 @@ Click **Grant admin consent for Default Directory**, and then click **Yes** to c
 **Note**: Only Azure administrators can grant consent for Default Directory.
 If the _Grant admin consent_ button is disabled, ask your Azure admin to update the setting for you.
 
+### 3.1 Set up Access Control for the app: (Currently required only for ASC(Azure Security Center) Tasks API)
+Navigate to Subscriptions (You can use the search bar in the top of the page).
+
+Click the desired subscription.
+
+Click **Access Control (IAM)**.
+
+Click **Add** at the top of the page, and then click **Role Assignment**.
+
+Search for **Security Reader** in the Role bar, and choose it.
+
+In the Assign Access To bar, select **User, Group or Service Principal**.
+
+In the Select bar, search for your registered app name and select it.
+
+Click **Save**.
+
+
+
 ### 4. Create a configuration file
 
 Create a configuration yaml file (`logzio-msgraph-config.yaml`) for Logzio-MSGraph.
@@ -111,9 +132,10 @@ additionalFields:
 | azureADClient.clientId | **Required**. Application client ID. <br> You can find this in the _Overview_ section of the app you registered in step 1. |
 | azureADClient.clientSecret | **Required**. The Application Client Secret you created in step 2. |
 | azureADClient.pullIntervalSeconds | **Default**: `300` <br>  Time interval, in seconds, to pull the logs with the Graph API. |
+| azureAdClient.subscriptionId | **Required**: <br> Subscription id of the azure accounts, currently only required for the ASC(Azure Security Center) Tasks api. |
 | targetApis | **Required**. <br> Specifies types of api lists to run, each API provider has its own list. Must contain at least 1 list with 1 api in the list. Current supported providers: ADApis, ASCApis. |
 | targetApis.ADApis | **Optional**. <br>  List of AD apis to run. Current supported apis: directoryAudits, signIns (this includes risky sign ins), riskySignIns. All apis are case sensitive and should be configured as mentioned here. |
-| targetApis.ASCApis | **Optional**. <br>  List of ASC apis to run. Current supported apis: alerts. All apis are case sensitive and should be configured as mentioned here. |
+| targetApis.ASCApis | **Optional**. <br>  List of ASC apis to run. Current supported apis: alerts, tasks. All apis are case sensitive and should be configured as mentioned here. |
 | logLevel | **Default**: `INFO` <br> Log level for Logizo-MSGraph to omit. Can be one of: `OFF`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `TRACE`, `ALL`. |
 | additionalFields | **Optional**. <br> List of additional fields to be added to the sent data. Pairs of key and value.
 
@@ -150,7 +172,9 @@ and run:
 java -jar logzio-msgraph.jar logzio-msgraph-config.yaml
 ```
 
-Logs collected by this integration will have the type `Microsoft-Graph`
+**If you want to run this application with an IDE, the -parameters argument must be added to the compiler**
+
+Logs collected by this integration will have the type `Microsoft-Graph` and contain the client and tenant id's.
 
 ### 6. Check Logz.io for your logs
 

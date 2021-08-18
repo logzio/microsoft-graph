@@ -2,6 +2,7 @@ azureADClient:
   tenantId: "sample-tenant-id"
   clientId: "sample-client-id"
   clientSecret: "sample+client:secret*"
+  subscriptionId: "sample-subscription-id"
   pullIntervalSeconds: 600
 
 senderParams:
@@ -20,3 +21,8 @@ targetApi:
     - riskySignIns
   ASCApis:
     - alerts
+    - tasks
+
+additionalFields:
+  field1: "value1"
+  field2: "value2"

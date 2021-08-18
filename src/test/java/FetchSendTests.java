@@ -1,4 +1,5 @@
 import api.MSGraphRequestExecutor;
+import api.authorization.Authorizer;
 import main.FetchSendManager;
 import objects.JsonArrayRequest;
 import objects.LogzioJavaSenderParams;
@@ -21,10 +22,12 @@ import javax.naming.AuthenticationException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static java.lang.Thread.sleep;
@@ -96,8 +99,9 @@ public class FetchSendTests {
     public static void close() {
         mockServer.stop();
     }
-    private RequestDataResult getSampleResult() {
-        File signinsFile = new File(getClass().getClassLoader().getResource("sampleSignins.json").getFile());
+
+    private RequestDataResult getSampleResult(String fileName) {
+        File signinsFile = new File(getClass().getClassLoader().getResource(fileName).getFile());
         try {
             String content = FileUtils.readFileToString(signinsFile, "utf-8");
             JSONTokener tokener = new JSONTokener(content);
@@ -109,11 +113,15 @@ public class FetchSendTests {
         return null;
     }
 
+    private RequestDataResult getSampleSignInsResult() {
+        return getSampleResult("sampleSignins.json");
+    }
+
     @Test
     public void FetchSendTest() throws InterruptedException, JSONException {
         int initialRequestsLength = mockServerClient.retrieveRecordedRequests(request().withMethod("POST")).length;
         ArrayList<JsonArrayRequest> requests = new ArrayList<>();
-        requests.add(this::getSampleResult);
+        requests.add(this::getSampleSignInsResult);
         FetchSendManager manager = new FetchSendManager(requests, senderParams, 10);
         manager.start();
         requests.forEach(req-> {
@@ -140,7 +148,7 @@ public class FetchSendTests {
         requests.add(this::getResultAfter2Retries);
         FetchSendManager manager = new FetchSendManager(requests, senderParams, 10);
         manager.start();
-        requests.forEach(req-> {
+        requests.forEach(req -> {
             try {
                 manager.pullAndSendData(req);
             } catch (ConfigurationException exception) {
@@ -150,7 +158,7 @@ public class FetchSendTests {
         Thread.sleep(2000);
         RequestDefinition[] recordedRequests = mockServerClient.retrieveRecordedRequests(request().withMethod("POST"));
         Assert.assertEquals(initialRequestsLength + 1, recordedRequests.length);
-        Map<String,String> paramsMap=mapFromJSONObject(new JSONObject(recordedRequests[initialRequestsLength].toString()).getJSONObject("body"));
+        Map<String, String> paramsMap = mapFromJSONObject(new JSONObject(recordedRequests[initialRequestsLength].toString()).getJSONObject("body"));
         Assert.assertEquals(1, Integer.parseInt(paramsMap.get("key")));
         manager.shutdown();
     }
@@ -179,7 +187,7 @@ public class FetchSendTests {
 
         try {
             JSONArray dataResult = new JSONArray("[{\"key\":1}]");
-            return  new RequestDataResult(dataResult);
+            return new RequestDataResult(dataResult);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -195,21 +203,31 @@ public class FetchSendTests {
 
     @Test
     public void paginationTest() throws IOException, JSONException, AuthenticationException {
-        MSGraphRequestExecutor requestExecutor = new MSGraphRequestExecutor(ApiTests.getSampleAzureADClient()
-                , () -> "sampleAccessToken");
-        JSONArray jsonArray = requestExecutor.getAllPages("http://localhost:8070/chainRequest");
+        Authorizer authorizer = new Authorizer("sampleToken") {
+            @Override
+            protected String getTokenRequestUrlParameters() throws UnsupportedEncodingException {
+                return null;
+            }
+
+            @Override
+            public String getAccessToken() {
+                return this.accessToken;
+            }
+        };
+
+        MSGraphRequestExecutor requestExecutor = new MSGraphRequestExecutor(ApiTests.getSampleAzureADClient(),authorizer);
+        JSONArray jsonArray = requestExecutor.getAllPages("http://localhost:8070/chainRequest", authorizer.getClass());
         Assert.assertEquals(3, jsonArray.length());
     }
 
     @Test
-    public void interruptMidSendTest(){
-        int initialRequestsCount = mockServerClient.retrieveRecordedRequests(request().withMethod("POST")).length;
+    public void interruptMidSendTest() {
         ArrayList<JsonArrayRequest> requests = new ArrayList<>();
-        requests.add(this::getSampleResult);
+        requests.add(this::getSampleSignInsResult);
 
         FetchSendManager manager = new FetchSendManager(requests, senderParams, 10);
         manager.start();
-        Thread storageThread = new Thread(()-> {
+        Thread storageThread = new Thread(() -> {
             try {
                 manager.pullAndSendData(requests.get(0));
             } catch (ConfigurationException exception) {
@@ -228,13 +246,13 @@ public class FetchSendTests {
         return;
     }
 
-    private Map<String,String> mapFromJSONObject(JSONObject json){
-        String[] paramString= json.getString("string").replaceAll("[{}\\\u0000\"]","")
+    private Map<String, String> mapFromJSONObject(JSONObject json) {
+        String[] paramString = json.getString("string").replaceAll("[{}\\\u0000\"]", "")
                 .split("\\r?\\n")[0].split(",");
-        Map<String,String> paramsMap= new HashMap<>();
-        for(String string: paramString){
-            String[] params=string.split(":",2);
-            paramsMap.put(params[0],params[1]);
+        Map<String, String> paramsMap = new HashMap<>();
+        for (String string : paramString) {
+            String[] params = string.split(":", 2);
+            paramsMap.put(params[0], params[1]);
         }
 
         return paramsMap;
