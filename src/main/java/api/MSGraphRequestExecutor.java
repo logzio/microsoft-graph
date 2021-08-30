@@ -1,8 +1,7 @@
 package api;
 
-import api.authorization.Authorizer;
+import api.authorization.AuthorizationManager;
 import objects.AzureADClient;
-import objects.MSGraphConfiguration;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -10,11 +9,8 @@ import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import utils.ApiUtil;
-
 import javax.naming.AuthenticationException;
 import java.io.IOException;
-import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class MSGraphRequestExecutor {
@@ -28,54 +24,21 @@ public class MSGraphRequestExecutor {
     private static final String JSON_ERROR = "error";
     private static final String JSON_MESSAGE = "message";
     private static final int DEFAULT_READ_TIMEOUT_SEC = 20;
-    private final Map<Class<? extends Authorizer>, Authorizer> apiTargetAuthorizers;
+    private final AuthorizationManager authorizationManager;
 
-    /**
-     * Construtor for testing purposes only
-     * @param client
-     * @param authorizer
-     * @throws AuthenticationException
-     */
-    public MSGraphRequestExecutor(AzureADClient client,Authorizer authorizer) throws AuthenticationException {
-        apiTargetAuthorizers = Map.of(authorizer.getClass(),authorizer);
+    public MSGraphRequestExecutor(AzureADClient client) throws AuthenticationException {
+        authorizationManager=new AuthorizationManager(client);
     }
 
-    public  MSGraphRequestExecutor(MSGraphConfiguration configuration, List<String> apiClassNames) throws AuthenticationException, ReflectiveOperationException{
-        apiTargetAuthorizers = initializeAuthorizers(apiClassNames,configuration.getAzureADClient());
+    public MSGraphRequestExecutor(AzureADClient client,String authorizationUrl,String urlParameters) throws AuthenticationException {
+        authorizationManager=new AuthorizationManager(client,authorizationUrl,urlParameters);
     }
 
-    /**
-     * Instantiate required authorizers (once each) by each API from apiClassNames
-     * @param apiClassNames List of api class names, excluding package prefix
-     * @param azureADClient
-     * @return
-     * @throws ReflectiveOperationException
-     */
-    private Map<Class<? extends Authorizer>, Authorizer> initializeAuthorizers(List<String> apiClassNames, AzureADClient azureADClient) throws ReflectiveOperationException {
-        Map<Class<? extends Authorizer>, Authorizer> apiTargetAuthorizers= new HashMap<>(apiClassNames.size());
-        Set<Class<? extends Authorizer>> authorizersTypes= new HashSet<>();
-
-        for(String apiClassName:apiClassNames){
-            Class<? extends Authorizer> managerClass = ApiUtil.getAuthorizationManagerClass(Class.forName(ApiUtil.getApisPackageName()+apiClassName));
-            if(!authorizersTypes.contains(managerClass)) {
-                authorizersTypes.add(managerClass);
-                apiTargetAuthorizers.put(managerClass,
-                        managerClass.getDeclaredConstructor(AzureADClient.class)
-                                .newInstance(azureADClient));
-            }
-        }
-
-        return apiTargetAuthorizers;
-    }
-
-    private Response executeRequest(String url, Authorizer authorizer) throws IOException, AuthenticationException {
+    private Response executeRequest(String url, String unformattedAuthorizationUrl) throws IOException, AuthenticationException {
         OkHttpClient client = new OkHttpClient.Builder()
                 .readTimeout(DEFAULT_READ_TIMEOUT_SEC, TimeUnit.SECONDS)
                 .build();
-        String accessToken = authorizer.getAccessToken();
-        if (accessToken == null) {
-            throw new AuthenticationException("couldn't get access token, will try at the next pull");
-        }
+        String accessToken = authorizationManager.getAccessToken(unformattedAuthorizationUrl);
         Request request = new Request.Builder()
                 .addHeader(AUTHORIZATION, BEARER_PREFIX + accessToken)
                 .addHeader(CONTENT_TYPE, APPLICATION_JSON)
@@ -85,9 +48,9 @@ public class MSGraphRequestExecutor {
         return client.newCall(request).execute();
     }
 
-    public JSONArray getAllPages(String url,Class<?> authenticationManagerClass ) throws IOException, JSONException, AuthenticationException {
+    public JSONArray getAllPages(String url, String unformattedAuthorizationUrl ) throws IOException, JSONException, AuthenticationException {
         logger.debug("Thread: "+Thread.currentThread().getName()+", API URL: " + url);
-        Response response = executeRequest(url, apiTargetAuthorizers.get(authenticationManagerClass));
+        Response response = executeRequest(url, unformattedAuthorizationUrl);
         String responseBody = response.body().string();
         JSONObject resultJson = new JSONObject(responseBody);
 
@@ -96,7 +59,7 @@ public class MSGraphRequestExecutor {
             logger.debug(thisPage.length() + " records in this page");
             if (resultJson.has(JSON_NEXT_LINK)) {
                 logger.debug("found next page = " + resultJson.getString(JSON_NEXT_LINK));
-                JSONArray nextPages = getAllPages(resultJson.getString(JSON_NEXT_LINK),authenticationManagerClass);
+                JSONArray nextPages = getAllPages(resultJson.getString(JSON_NEXT_LINK),unformattedAuthorizationUrl);
                 for (int i = 0; i < thisPage.length(); i++) {
                     nextPages.put(thisPage.get(i));
                 }

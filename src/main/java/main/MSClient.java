@@ -44,15 +44,11 @@ public class MSClient {
         }
 
         MSGraphRequestExecutor executor;
-        List<String> apiClassNames;
         try {
-            apiClassNames=getApiClassNames();
-            executor = new MSGraphRequestExecutor(configuration,apiClassNames);
+            executor = new MSGraphRequestExecutor(configuration.getAzureADClient());
         } catch (AuthenticationException e) {
             logger.error(e.getMessage(), e);
             return;
-        }catch (ReflectiveOperationException e){
-            throw new ConfigurationException("Invalid api name in the configuration file");
         }
 
         ArrayList<JsonArrayRequest> requests = new ArrayList(getApiTargets(executor,getApiClassNames()));
@@ -143,7 +139,6 @@ public class MSClient {
         Yaml yaml = new Yaml(new Constructor(MSGraphConfiguration.class));
         InputStream inputStream = new FileInputStream(new File(yamlFile));
         MSGraphConfiguration config = yaml.load(inputStream);
-
         checkNotNull(config.getSenderParams(), "Config file format error, logzioSenderParameters can't be empty");
         checkNotNull(config.getAzureADClient(), "Config file format error, azureADClient can't be empty");
         checkNotNull(config.getSenderParams().getAccountToken(), "Parameter logzioSenderParameters.accountToken is mandatory");

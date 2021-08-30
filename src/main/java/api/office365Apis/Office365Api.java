@@ -46,7 +46,7 @@ public abstract class Office365Api {
     private RequestDataResult getRequestDataResult(String api) {
         RequestDataResult dataResult = new RequestDataResult();
         try {
-            dataResult.setData(requestExecutor.getAllPages(api,getAuthorizationManagerClass()));
+            dataResult.setData(requestExecutor.getAllPages(api,getAuthorizationUrl()));
             return dataResult;
         } catch (IOException | JSONException e) {
             logger.warn("error parsing response: " + e.getMessage(), e);
@@ -63,8 +63,8 @@ public abstract class Office365Api {
 
     public abstract RequestDataResult getApiRequest();
 
-    public Class<?> getAuthorizationManagerClass() {
-        return ApiUtil.getAuthorizationManagerClass(this.getClass());
+    public String getAuthorizationUrl() {
+        return ApiUtil.getAuthorizationUrl(this.getClass());
     }
 
     public  String timeFilterSuffix(String timeField){

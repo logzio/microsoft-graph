@@ -107,7 +107,7 @@ azureADClient:
   clientId: "<<APP_CLIENT_ID>>"
   clientSecret: "<<APP_CLIENT_SECRET>>"
 
-targetApis:
+targetApi:
   ADApis:
     - <<supportedApi1>>
     - <<supportedApi2>>
@@ -133,7 +133,7 @@ additionalFields:
 | azureADClient.clientSecret | **Required**. The Application Client Secret you created in step 2. |
 | azureADClient.pullIntervalSeconds | **Default**: `300` <br>  Time interval, in seconds, to pull the logs with the Graph API. |
 | azureAdClient.subscriptionId | **Required**: <br> Subscription id of the azure accounts, currently only required for the ASC(Azure Security Center) Tasks api. |
-| targetApis | **Required**. <br> Specifies types of api lists to run, each API provider has its own list. Must contain at least 1 list with 1 api in the list. Current supported providers: ADApis, ASCApis. |
+| targetApi | **Required**. <br> Specifies types of api lists to run, each API provider has its own list. Must contain at least 1 list with 1 api in the list. Current supported providers: ADApis, ASCApis. |
 | targetApis.ADApis | **Optional**. <br>  List of AD apis to run. Current supported apis: directoryAudits, signIns (this includes risky sign ins), riskySignIns. All apis are case sensitive and should be configured as mentioned here. |
 | targetApis.ASCApis | **Optional**. <br>  List of ASC apis to run. Current supported apis: alerts, tasks. All apis are case sensitive and should be configured as mentioned here. |
 | logLevel | **Default**: `INFO` <br> Log level for Logizo-MSGraph to omit. Can be one of: `OFF`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `TRACE`, `ALL`. |

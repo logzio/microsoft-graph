@@ -9,3 +9,8 @@ senderParams:
 targetApi:
   ADapi:
     - riskySignIns
+  ASCAp:
+    - alerts
+
+additionalData:
+  key: "value"

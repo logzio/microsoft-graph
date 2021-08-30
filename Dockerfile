@@ -1,5 +1,5 @@
 
-FROM adoptopenjdk/openjdk11:jre-11.0.9_11.1-alpine
+FROM adoptopenjdk/openjdk11:jre-11.0.11_9-alpine
 
 MAINTAINER Tamir Michaeli <tamir.michaeli@logz.io>
 

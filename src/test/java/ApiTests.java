@@ -1,6 +1,5 @@
-import api.authorization.Authorizer;
-import api.authorization.AzureADAuthorizationManager;
-import api.authorization.AzureManagementAuthorizationManager;
+
+import api.authorization.AuthorizationManager;
 import objects.AzureADClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -27,22 +26,36 @@ public class ApiTests {
     @Test
     public void accessTokenRequestTest() throws InterruptedException, UnsupportedEncodingException {
         AzureADClient client = getSampleAzureADClient();
-        AzureAuthorizationTest(client);
+        mockWebServer.enqueue(new MockResponse());
+        Assert.assertThrows(AuthenticationException.class, () -> {
+            new AuthorizationManager(client,"http://localhost:" + mockWebServer.getPort(),"client_id=" + client.getClientId()
+            +"&client_secret=" + URLEncoder.encode(client.getClientSecret(), StandardCharsets.UTF_8.toString()))
+                    .getAccessToken("http://localhost:" + mockWebServer.getPort());
+        });
+
+        verifyRequest(client);
     }
 
-    private void AzureAuthorizationTest(AzureADClient client) throws InterruptedException, UnsupportedEncodingException {
+    @Test
+    public void wrongBodyAccessTokenRequest() throws InterruptedException, UnsupportedEncodingException{
+        AzureADClient client = getSampleAzureADClient();
         mockWebServer.enqueue(new MockResponse());
         Assert.assertThrows(AuthenticationException.class, () -> {
-            Authorizer manager = new AzureADAuthorizationManager(client,"http://localhost:" + mockWebServer.getPort());
+            new AuthorizationManager(client,"http://localhost:" + mockWebServer.getPort(),"client_id=" + "fakeClientId"
+                    +"&client_secret=" + URLEncoder.encode("fakeClientSecret"))
+                    .getAccessToken("http://localhost:" + mockWebServer.getPort());
         });
 
-        verifyRequest(client);
-        mockWebServer.enqueue(new MockResponse());
-        Assert.assertThrows(AuthenticationException.class, () -> {
-            Authorizer manager = new AzureManagementAuthorizationManager(client,"http://localhost:" + mockWebServer.getPort());
-        });
+        verifyFalseRequest(client);
+    }
 
-        verifyRequest(client);
+    private void verifyFalseRequest(AzureADClient client) throws InterruptedException, UnsupportedEncodingException {
+        String body;
+        RecordedRequest request;
+        request = mockWebServer.takeRequest();
+        body = request.getBody().readUtf8();
+        Assert.assertFalse(body.contains("client_id=" + client.getClientId()));
+        Assert.assertFalse(body.contains("client_secret=" + URLEncoder.encode(client.getClientSecret(), StandardCharsets.UTF_8.toString())));
     }
 
     private void verifyRequest(AzureADClient client) throws InterruptedException, UnsupportedEncodingException {

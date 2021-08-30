@@ -6,6 +6,7 @@ public class AzureADClient {
     private String clientId;
     private String clientSecret;
     private String subscriptionId;
+    private TargetApi targetApi;
     private int pullIntervalSeconds = 300;
 
     public AzureADClient() {
@@ -49,5 +50,13 @@ public class AzureADClient {
 
     public void setSubscriptionId(String subscriptionId) {
         this.subscriptionId = subscriptionId;
+    }
+
+    public TargetApi getTargetApi() {
+        return targetApi;
+    }
+
+    public void setTargetApi(TargetApi targetApi) {
+        this.targetApi = targetApi;
     }
 }

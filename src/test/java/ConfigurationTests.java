@@ -34,7 +34,6 @@ public class ConfigurationTests {
         Assert.assertEquals("sample+client:secret*",configuration.getAzureADClient().getClientSecret());
         Assert.assertEquals("sample-subscription-id",configuration.getAzureADClient().getSubscriptionId());
         Assert.assertEquals(600 ,configuration.getAzureADClient().getPullIntervalSeconds());
-
         Assert.assertEquals("sampleAccountToken",configuration.getSenderParams().getAccountToken());
         Assert.assertEquals("https://listener-eu.logz.io:8071", configuration.getSenderParams().getListenerUrl());
         Assert.assertEquals(1000, configuration.getSenderParams().getDiskSpaceCheckInterval());
@@ -61,6 +60,8 @@ public class ConfigurationTests {
             String testFileString = new File(getClass().getClassLoader().getResource("wrongParameterNameConfig.yaml").getFile()).getAbsolutePath();
             MSGraphConfiguration client=new MSClient(testFileString).getConfiguration();
             Assert.assertNull(client.getTargetApi().getADApis());
+            Assert.assertNull(client.getTargetApi().getAscApis());
+            Assert.assertNull(client.getAdditionalFields());
         });
     }
 

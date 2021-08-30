@@ -1,5 +1,4 @@
 import api.MSGraphRequestExecutor;
-import api.authorization.Authorizer;
 import main.FetchSendManager;
 import objects.JsonArrayRequest;
 import objects.LogzioJavaSenderParams;
@@ -22,12 +21,10 @@ import javax.naming.AuthenticationException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static java.lang.Thread.sleep;
@@ -59,9 +56,16 @@ public class FetchSendTests {
         JSONObject link2ResponseBody = new JSONObject();
         link2ResponseBody.put("value", new JSONArray("[{\"key\":3}]"));
 
+        JSONObject tokenResponseBody = new JSONObject();
+        tokenResponseBody.put("access_token","12345");
+        tokenResponseBody.put("expires_in","30000");
+
         mockServer = startClientAndServer(8070);
 
         mockServerClient = new MockServerClient("localhost", 8070);
+        mockServer
+                .when(request().withMethod("POST").withPath("/token"))
+                .respond(response().withStatusCode(200).withBody(tokenResponseBody.toString()));
         mockServerClient
                 .when(request().withMethod("POST"))
                 .respond(response().withStatusCode(200));
@@ -203,21 +207,18 @@ public class FetchSendTests {
 
     @Test
     public void paginationTest() throws IOException, JSONException, AuthenticationException {
-        Authorizer authorizer = new Authorizer("sampleToken") {
-            @Override
-            protected String getTokenRequestUrlParameters() throws UnsupportedEncodingException {
-                return null;
-            }
-
-            @Override
-            public String getAccessToken() {
-                return this.accessToken;
-            }
-        };
-
-        MSGraphRequestExecutor requestExecutor = new MSGraphRequestExecutor(ApiTests.getSampleAzureADClient(),authorizer);
-        JSONArray jsonArray = requestExecutor.getAllPages("http://localhost:8070/chainRequest", authorizer.getClass());
+        MSGraphRequestExecutor requestExecutor = new MSGraphRequestExecutor(ApiTests.getSampleAzureADClient(),
+                "http://127.0.0.1:8070/token" ,"");
+        JSONArray jsonArray = requestExecutor.getAllPages("http://127.0.0.1:8070/chainRequest", "http://127.0.0.1:8070/token");
         Assert.assertEquals(3, jsonArray.length());
+    }
+
+    @Test
+    public void negativePaginationTest() throws IOException, JSONException, AuthenticationException {
+        MSGraphRequestExecutor requestExecutor = new MSGraphRequestExecutor(ApiTests.getSampleAzureADClient(),
+                "http://127.0.0.1:8070/token" ,"");
+        JSONArray jsonArray = requestExecutor.getAllPages("http://127.0.0.1:8070/nextLink1", "http://127.0.0.1:8070/token");
+        Assert.assertNotEquals(3, jsonArray.length());
     }
 
     @Test
