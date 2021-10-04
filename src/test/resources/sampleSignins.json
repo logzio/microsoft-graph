@@ -1,0 +1,17 @@
+{
+  "value": [
+    {
+      "id": "aaaaa-bbbb-cccc-dddd-123456789",
+      "createdDateTime": "2019-07-22T12:56:27.7248992Z",
+      "userDisplayName": "John Smith",
+      "userPrincipalName": "john.s@gmail.com",
+      "userId": "not-a-real-user-id",
+      "appId": "0000000c-0000-0000-c000-000000000000",
+      "appDisplayName": "Microsoft App Access Panel",
+      "ipAddress": "199.403.104.57",
+      "clientAppUsed": "Browser",
+      "resourceDisplayName": "Windows Azure Active Directory",
+      "resourceId": "00000002-0000-0000-c000-000000000000"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+azureADClient:
+  notARealParameter: "sample-tenant-id"
+  clientId: "sample-client-id"
+  clientSecret: "sample+client:secret*"
+
+senderParams:
+  accountToken: "sampleAccountToken"
+
+targetApi:
+  ADapi:
+    - riskySignIns

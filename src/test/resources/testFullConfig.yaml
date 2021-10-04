@@ -1,0 +1,22 @@
+azureADClient:
+  tenantId: "sample-tenant-id"
+  clientId: "sample-client-id"
+  clientSecret: "sample+client:secret*"
+  pullIntervalSeconds: 600
+
+senderParams:
+  accountToken: "sampleAccountToken"
+  listenerUrl: "listener-eu.logz.io"
+  fromDisk: false
+  inMemoryQueueCapacityInBytes: 50000
+  logsCountLimit: 10000
+
+logLevel: "DEBUG"
+
+targetApi:
+  ADApis:
+    - signIns
+    - directoryAudits
+    - riskySignIns
+  ASCApis:
+    - alerts
