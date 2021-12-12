@@ -1,5 +1,10 @@
 # Change log
 
+## v0.0.7- Dec. 12, 2021
+
+**Updated:**
+- Package dependencies (Including Log4j vulnerability)
+
 ## v0.0.6- Aug. 11, 2021
 
 **Added:**
