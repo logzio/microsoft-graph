@@ -1,4 +1,12 @@
 # Microsoft Graph API Integration
+
+================================================================================================
+## ⚠️ Deprecation Note ⚠️
+### This project is deprecated and no longer maintained.
+### Please refer to [this project](https://github.com/logzio/logzio-api-fetcher) instead.
+=================================================================================================
+
+
 **Version 0.0.7**  [Change log](CHANGELOG.md)
 
 You can ship logs available from the Microsoft Graph APIs with Logzio-MSGraph.
